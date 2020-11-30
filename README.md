@@ -199,7 +199,7 @@ shellcode is from ["shellstorm"](http://shell-storm.org/shellcode/files/shellcod
 
 Now we fill the first buffer with shellcode, let's jump to it.
 
-We need to modify %rsp to point at the first buffer.
+We need to modify *%rsp* to point at the first buffer.
 After the overflow the function leaves and calls main so the 4 higher byter of *%rsi* will be all zeroes so we can use a gadget in this range by overwriting the four lower bytes.
 
 What gadgets do we have:
