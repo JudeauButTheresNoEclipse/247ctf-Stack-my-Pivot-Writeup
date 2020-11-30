@@ -40,5 +40,34 @@ PIE:      No PIE (0x400000)
 RWX:      Has RWX segments
 ```
 
+No PIE, nice. 64bit, wait we only read 24bytes, that's not a lot. Well this probably wont be a problem later.
+
+I use gdb gef but use whatever you want
+
+> gef> vmmap
+
+```
+0x0000000000400000 0x0000000000401000 0x0000000000000000 r-x /home/emanone/Documents/CTF/247CTF/Pwn/StackPivot/stack_my_pivot
+0x0000000000600000 0x0000000000601000 0x0000000000000000 r-- /home/emanone/Documents/CTF/247CTF/Pwn/StackPivot/stack_my_pivot
+0x0000000000601000 0x0000000000602000 0x0000000000001000 rw- /home/emanone/Documents/CTF/247CTF/Pwn/StackPivot/stack_my_pivot
+0x00007ffff7dcf000 0x00007ffff7dd1000 0x0000000000000000 rw- 
+0x00007ffff7dd1000 0x00007ffff7df7000 0x0000000000000000 r-- /usr/lib/libc-2.32.so
+0x00007ffff7df7000 0x00007ffff7f44000 0x0000000000026000 r-x /usr/lib/libc-2.32.so
+0x00007ffff7f44000 0x00007ffff7f90000 0x0000000000173000 r-- /usr/lib/libc-2.32.so
+0x00007ffff7f90000 0x00007ffff7f93000 0x00000000001be000 r-- /usr/lib/libc-2.32.so
+0x00007ffff7f93000 0x00007ffff7f96000 0x00000000001c1000 rw- /usr/lib/libc-2.32.so
+0x00007ffff7f96000 0x00007ffff7f9c000 0x0000000000000000 rw- 
+0x00007ffff7fca000 0x00007ffff7fce000 0x0000000000000000 r-- [vvar]
+0x00007ffff7fce000 0x00007ffff7fd0000 0x0000000000000000 r-x [vdso]
+0x00007ffff7fd0000 0x00007ffff7fd2000 0x0000000000000000 r-- /usr/lib/ld-2.32.so
+0x00007ffff7fd2000 0x00007ffff7ff3000 0x0000000000002000 r-x /usr/lib/ld-2.32.so
+0x00007ffff7ff3000 0x00007ffff7ffc000 0x0000000000023000 r-- /usr/lib/ld-2.32.so
+0x00007ffff7ffc000 0x00007ffff7ffd000 0x000000000002b000 r-- /usr/lib/ld-2.32.so
+0x00007ffff7ffd000 0x00007ffff7fff000 0x000000000002c000 rw- /usr/lib/ld-2.32.so
+0x00007ffffffde000 0x00007ffffffff000 0x0000000000000000 rwx [stack]
+0xffffffffff600000 0xffffffffff601000 0x0000000000000000 --x [vsyscall]
+```
+
+Executable stack, nice. Let's assume ASLR is on (it is).
 
 I was really stuck on this challenge and the creator [Razvi](https://twitter.com/Razvieu) had the kindness of helping me ! Thanks to him for his time and for the challenge.
