@@ -70,4 +70,31 @@ I use gdb gef but use whatever you want
 
 Executable stack, nice. Let's assume ASLR is on (it is).
 
+Ok let's see what registers we can overwrite.
+We now the read is 0x1c so 24.
+
+> pattern create 28
+```
+[+] Generating a pattern of 28 bytes
+aaaaaaaabaaaaaaacaaaaaaadaaa
+[+] Saved as '$_gef0
+```
+
+We know the first one cannot be overflowed so let's not bother trying it.
+
+> gef➤  c
+```
+Continuing.
+[+] Welcome!
+[+] What's your first name?
+smth 
+[+] What's your surname?
+aaaaaaaabaaaaaaacaaaaaaadaaa
+```
+
+![alt text](./screenshots/register_overflow.png "register overflow")
+
+
+
+## Thanks
 I was really stuck on this challenge and the creator [Razvi](https://twitter.com/Razvieu) had the kindness of helping me ! Thanks to him for his time and for the challenge.
