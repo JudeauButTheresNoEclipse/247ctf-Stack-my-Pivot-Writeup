@@ -10,7 +10,7 @@ So There is the challenge:
 We learn that the buffers will be small.
 Let's look at it inside ghidra.
 
-##Ghidra
+## Ghidra
 Lorem Ipsum
 
 
