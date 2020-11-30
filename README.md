@@ -94,7 +94,7 @@ aaaaaaaabaaaaaaacaaaaaaadaaa
 
 ![alt text](./screenshots/register_overflow.png "register overflow")
 
-So we write *%rsi* and we overwrite the 4 lower bytes of *%rsi*, shit.
+So we write *%rsi* and we overwrite the 4 lower bytes of *%rip*, shit.
 
 ## Pwntools
 
@@ -117,7 +117,7 @@ from pwn import *
 
 # Set up pwntools for the correct architecture
 exe = context.binary = ELF('../stack_my_pivot')
-
+context.terminal = ['tmux', 'splitw', '-h']
 # Many built-in settings can be controlled on the command-line and show up
 # in "args".  For example, to dump all data sent/received, and disable ASLR
 # for all created processes...
@@ -179,7 +179,11 @@ io = start()
 io.interactive()
 ```
 
+We also know that *%rip* is at offset 24/
 
+``` python
+rip_offset = 24
+```
 
 ## Thanks
 I was really stuck on this challenge and the creator [Razvi](https://twitter.com/Razvieu) had the kindness of helping me ! Thanks to him for his time and for the challenge.
